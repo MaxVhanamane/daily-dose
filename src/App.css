@@ -11,6 +11,13 @@
 .active{
   color:  black !important;
 }
+.navbar-toggler:focus,
+.navbar-toggler:active,
+.navbar-toggler-icon:focus {
+    outline: none;
+    box-shadow: none;
+}
+
 
 button:hover {
   outline: none !important;
@@ -21,6 +28,7 @@ button:hover {
 .custom-toggler.navbar-toggler {
   border-color: rgb(0, 0, 0);
 }
+
 /* Setting the stroke to green using rgb values (0, 128, 0) */
 
 .custom-toggler .navbar-toggler-icon {

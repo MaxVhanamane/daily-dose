@@ -11,12 +11,11 @@ import { v4 as uuidv4 } from 'uuid';
 import InfiniteScroll from "react-infinite-scroll-component";
 
 export default function News(props) {
-
+    const apiKey = process.env.REACT_APP_NEWS_API_KEY
     const [articles, setArticles] = useState([])
     const [page, setPage, pageRef] = useState(1)
     const [loading, setLoading] = useState(true)  // setting loading: true so that it can show spinner when web app starts.
     const [totalResults, setTotalResults] = useState(0)
-    
 
     // Adding a function to capitalize first letter of news heading (h1) and title.
     const capitalize = s => s && s[0].toUpperCase() + s.slice(1)
@@ -24,23 +23,35 @@ export default function News(props) {
     async function updateNews(props) {
         // props.setProgress(10) this used to set progress value for top loading bar.
         props.setProgress(10)
-        // url to get news from news api using api key
-        let url = `https://newsapi.org/v2/top-headlines?country=in&category=${props.category}&apiKey=${props.apiKey}&page=${page}&pageSize=${props.pageSize}`
-        // here pageSize is the number of results to return per page. To understand this read https://newsapi.org documentation.
-        // page - Use this to page through the results.
+        // page_size- How many news articles are in the returned JSON object
+        // documentation - https://docs.newscatcherapi.com/api-docs/endpoints/search-news
+        let axios = require("axios").default;
 
-        // data will be received in object form
-        let data = await fetch(url)
-        props.setProgress(50)
-        // parsing the received data
-        let parsedData = await data.json()
-        // console.log(parsedData)
-        props.setProgress(75)
-        // Adding required data to the state
-        setArticles(parsedData.articles)
-        setTotalResults(parsedData.totalResults)
-        setLoading(false) // as we have received the data so there is no need to show the spinner anymore.
-        props.setProgress(100)
+        let options = {
+          method: 'GET',
+          url:`https://api.newscatcherapi.com/v2/latest_headlines?countries=IN&lang=en&topic=${props.category}&page=${page}&page_size=${props.pageSize}`,
+          
+          headers: {
+            'x-api-key': `${apiKey}`
+          }
+        };
+        
+        axios.request(options).then(function (response) {
+            // console.log("yea",response.data);
+            props.setProgress(50)
+            // parsing the received data
+            let parsedData = response.data
+            // console.log(parsedData)
+            props.setProgress(75)
+            // Adding required data to the state
+            setArticles(parsedData.articles)
+            setTotalResults(parsedData.total_hits)
+            setLoading(false) // as we have received the data so there is no need to show the spinner anymore.
+            props.setProgress(100)
+        }).catch(function (error) {
+            return
+        });
+
     }
 
     useEffect(() => {
@@ -49,6 +60,8 @@ export default function News(props) {
         updateNews(props)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+
 
     // This function is required by the InfiniteScroll component
     const fetchMoreData = async (props) => {
@@ -68,21 +81,40 @@ export default function News(props) {
         //     return state;
         //   })
  
-        // There are other simple ways to give next value to the page but I wanted to use the state value as soon as it updates that's why 
-        // I used external library.
-        let url = `https://newsapi.org/v2/top-headlines?country=in&category=${props.category}&apiKey=${props.apiKey}&page=${pageRef.current}&pageSize=${props.pageSize}`
+        // // There are other simple ways to give next value to the page but I wanted to use the state value as soon as it updates that's why 
+        // // I used external library.
+        // url:`https://api.newscatcherapi.com/v2/latest_headlines?countries=IN&lang=en&topic=${props.category}&page=${pageRef.current}&page_size=${props.pageSize}`
+   
+        let axios = require("axios").default;
 
-        let data = await fetch(url)
-        let parsedData = await data.json()
-        // here concatinating the old articles to the new articles so that I can show all the news on a single page with infinite scolling 
+        let options = {
+          method: 'GET',
+          url:`https://api.newscatcherapi.com/v2/latest_headlines?countries=IN&lang=en&topic=${props.category}&page=${pageRef.current}&page_size=${props.pageSize}`,
+          
+          headers: {
+            'x-api-key': `${apiKey}`,
+            'Content-Type': 'application/json',
+          }
+        };
+        
+        axios.request(options).then(function (response) {
+        
+            // parsing the received data
+            let parsedData = response.data
+            // Adding required data to the state
+              // here concatinating the old articles to the new articles so that I can show all the news on a single page with infinite scolling 
         setArticles(articles.concat(parsedData.articles))
-        setTotalResults(parsedData.totalResults)
-
+        setTotalResults(parsedData.total_hits)
+           
+        }).catch(function (error) {
+            console.error(error);
+        });
+        
 
     };
     return (
         <>
-            <div className="container my-4">
+           <div className="container my-4">
                 <h1 className="text-center" style={{ marginTop: "90px" }}>Top {capitalize(props.category)} Headlines</h1>
                 {loading && <Spinner />}
 
@@ -98,7 +130,7 @@ export default function News(props) {
                         <div className="row my-3">
                             {articles.map((element) => {
                                 return <div key={uuidv4()} className=" col-md-6 col-sm-12 col-lg-4 ">
-                                    < NewsItem title={element.title ? element.title : "No title"} description={element.description} imageUrl={element.urlToImage} url={element.url} author={element.author} time={element.publishedAt} source={element.source.name} />
+                                    < NewsItem title={element.title ? element.title : "No title"} description={element.summary} imageUrl={element.media} url={element.link} author={element.author} time={element.published_date} source={element.rights} />
                                 </div>
                             })}
                         </div>
@@ -114,8 +146,8 @@ export default function News(props) {
 
 // Adding default props
 News.defaultProps = {
-    country: 'in',
-    pageSize: 15
+    country: 'In',
+    pageSize: 100
 }
 
 // Adding prop types
