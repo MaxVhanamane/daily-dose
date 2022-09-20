@@ -18,6 +18,9 @@
     box-shadow: none;
 }
 
+.card{
+  border: none !important;
+}
 
 button:hover {
   outline: none !important;
